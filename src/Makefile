@@ -1,14 +1,25 @@
-CC = gcc
+CC=gcc
+CFLAGS=-Wall -Wextra -Werror -pedantic
+TARGETS = $(patsubst %.c,%,$(wildcard *.c))
 
-# Compiler and linker flags
-CFLAGS = -Wall
-# Source files
-SRCS = main.c
-# Target
-PROG = simpledu
+define make_target
+$(1): $(1).o
+	$(CC) $(CFLAGS) $$^ -o $$@
+endef
 
-simpledu:
-	$(CC) $(CFLAGS) -o $(PROG) $(SRCS)
+.PHONY: all clean
+all: $(TARGETS)
+
+ifdef DEV_INFO
+DEV_FLAGS = -save-temps
+endif
+
+$(foreach TARGET,$(TARGETS),$(eval $(call make_target,$(TARGET))))
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(DEV_FLAGS) -MMD -c $< -o $@
 
 clean:
-	rm simpledu
+	rm -f $(TARGETS) *.o *.d *.i *.s
+
+-include $(TARGETS:=.d)
