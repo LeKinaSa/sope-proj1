@@ -1,4 +1,5 @@
 #include "parsing.h"
+#include "log.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -58,7 +59,7 @@ struct CmdArgs parseArgs(int argc, char* argv[], char *envp[]) {
 
     if (argc < 2 || argc > 10) {
         printf("Usage: %s -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]\n", argv[0]);
-        exit(1);
+        logAndExit(1);
     }
 
     for (int i = 0; ; i++) {
@@ -101,11 +102,11 @@ struct CmdArgs parseArgs(int argc, char* argv[], char *envp[]) {
                     strcpy(res.path, argv[i]);
                 } else {
                     fprintf(stderr, "Error: \"%s\" is not a valid directory path\n", argv[i]);
-                    exit(1);
+                    logAndExit(1);
                 }
             } else {
                 fprintf(stderr, "Error: More than one possible path\n");
-                exit(1);
+                logAndExit(1);
             }
             i++;
             continue;
@@ -114,12 +115,12 @@ struct CmdArgs parseArgs(int argc, char* argv[], char *envp[]) {
         if (strcmp("-B", argv[i]) == 0) {
             if (i + 1 == argc) {
                 fprintf(stderr, "Error: \"-B\" option requires a numerical argument\n");
-                exit(1);
+                logAndExit(1);
             } else {
                 bool success = sscanf(argv[i + 1], "%u", &res.blockSize) == 1;
                 if (!success) {
                     fprintf(stderr, "Error: \"-B\" option requires a numerical argument\n");
-                    exit(1);
+                    logAndExit(1);
                 }
             }
             i += 2;
@@ -130,7 +131,7 @@ struct CmdArgs parseArgs(int argc, char* argv[], char *envp[]) {
             bool success = sscanf(argv[i] + strlen("--block-size="), "%u", &res.blockSize) == 1;
             if (!success) {
                 fprintf(stderr, "Error: In \"--block-size=SIZE\", SIZE must be an unsigned integer\n");
-                exit(1);
+                logAndExit(1);
             }
             ++i;
             continue;
@@ -140,7 +141,7 @@ struct CmdArgs parseArgs(int argc, char* argv[], char *envp[]) {
             bool success = sscanf(argv[i] + strlen("--max-depth="), "%u", &res.maxDepth) == 1;
             if (!success) {
                 fprintf(stderr, "Error: In \"--max-depth=N\", N must be an unsigned integer\n");
-                exit(1);
+                logAndExit(1);
             }
             ++i;
             continue;
@@ -148,12 +149,12 @@ struct CmdArgs parseArgs(int argc, char* argv[], char *envp[]) {
 
 
         fprintf(stderr, "Error: option \"%s\" not recognized\n", argv[i]);
-        exit(1);
+        logAndExit(1);
     }
 
     if (!res.countLinks) {
         fprintf(stderr, "Error: \"-l\" option must be set\n");
-        exit(1);
+        logAndExit(1);
     }
 
     if (res.path == NULL) {
@@ -214,7 +215,7 @@ char **genChildArgv(int argc, char* argv[], const char *dirChildPath) {
             bool success = sscanf(newArgv[i] + strlen("--max-depth="), "%u", &depth) == 1;
             if (!success) {
                 fprintf(stderr, "genChildrenArgv error: In \"--max-depth=N\", N must be an unsigned integer\n");
-                exit(1);
+                logAndExit(1);
             }
 
             if (depth != 0) {

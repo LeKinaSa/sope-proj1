@@ -1,7 +1,8 @@
+#define _XOPEN_SOURCE 700   // Allows usage of some GNU/Linux standard functions and structures
+
 #include "log.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <math.h>
@@ -119,16 +120,16 @@ char * getSignal(char * signStr) {
     return sign;
 }
 
-int getMiliseconds() {
+long getMiliseconds() {
     struct timespec spec;
 
     clock_gettime(CLOCK_REALTIME, &spec);
-    return (spec.tv_nsec / 1e6);
+    return (spec.tv_sec * 1e3) + (spec.tv_nsec / 1e6);
 }
 
-int getMilisecondsSinceProgramStart() {
-    int miliseconds = getMiliseconds();
-    int instant;
+long getMilisecondsSinceProgramStart() {
+    long miliseconds = getMiliseconds();
+    long instant;
 
     if (programStartMiliseconds == 0) {
         programStartMiliseconds = miliseconds;
@@ -240,4 +241,51 @@ void logAndExit(int status) {
     free(logInfo[0]);
 
     exit(status);
+}
+
+void logWriteToPipe(const char* message) {
+    if (message == NULL) return;
+
+    char* logInfo[1];
+    logInfo[0] = malloc(strlen(message) + 1);
+    strcpy(logInfo[0], message);
+    createLog(WRITE_TO_PIPE, logInfo, 1);
+    free(logInfo[0]);
+}
+
+void logWriteEntryToPipe(size_t size, const char* path) {
+    if (path == NULL) return;
+
+    char* logInfo[1];
+    logInfo[0] = malloc(64 + strlen(path));
+    sprintf(logInfo[0], "%lu\t%s", size, path);
+
+    createLog(WRITE_TO_PIPE, logInfo, 1);
+
+    free(logInfo[0]);
+}
+
+void logReadFromPipe(const char* message) {
+    if (message == NULL) return;
+
+    char* logInfo[1];
+    logInfo[0] = malloc(strlen(message) + 1);
+    strcpy(logInfo[0], message);
+    createLog(READ_FROM_PIPE, logInfo, 1);
+    free(logInfo[0]);
+}
+
+void logEntry(size_t size, const char* path) {
+    if (path == NULL) return;
+
+    char* logInfo[2];
+    logInfo[0] = malloc(32);
+    logInfo[1] = malloc(strlen(path) + 1);
+    sprintf(logInfo[0], "%lu", size);
+    strcpy(logInfo[1], path);
+
+    createLog(ENTRY_FILE, logInfo, 2);
+
+    free(logInfo[0]);
+    free(logInfo[1]);
 }

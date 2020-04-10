@@ -47,6 +47,7 @@ void sigintHandler() {
 
     if (firstChildPIDStr != NULL) {
         firstChildPID = atoi(firstChildPIDStr);
+        logSignalSent(SIGSTOP, firstChildPID);
         killpg(firstChildPID, SIGSTOP);
     }
 

@@ -1,6 +1,7 @@
 #ifndef LOG_H
 #define LOG_H
 
+#include <stdlib.h>
 
 /**
  * @brief All the event types available for logging
@@ -28,5 +29,17 @@ int createLog(enum EventType event, char **info, int infoSize);
 
 /** @brief Logs an EXIT_PROCESS entry and exits with the given status */
 void logAndExit(int status);
+
+/** @brief Logs a WRITE_TO_PIPE entry with the given message */
+void logWriteToPipe(const char* message);
+
+/** @brief Logs a WRITE_TO_PIPE entry in the format <size>\t<path> */
+void logWriteEntryToPipe(size_t size, const char* path);
+
+/** @brief Logs a READ_FROM_PIPE entry with the given message */
+void logReadFromPipe(const char* message);
+
+/** @brief Logs an ENTRY_FILE entry with the given entry info */
+void logEntry(size_t size, const char* path);
 
 #endif // LOG_H

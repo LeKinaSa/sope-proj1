@@ -1,4 +1,4 @@
-# SOPE - Project 1, Group TODO
+# SOPE - Project 1, Group T2G04
 First project of the Operating Systems curricular unit.
 
 * Clara Martins   (up201806528)
@@ -6,28 +6,15 @@ First project of the Operating Systems curricular unit.
 * Gonçalo Pascoal (up201806332)
 
 ## Implemented features
-* TODO
+* Command line argument parsing and invalid input handling
+* Every required command line argument is implemented
+* Interruption of the program with `SIGINT`, sending `SIGSTOP` to child processes and `SIGTERM` or `SIGCONT` depending on user input
+* Complete logging of `CREATE`, `EXIT`, `RECV_PIPE`, `SEND_PIPE` and `ENTRY` type information
+* Partial logging of `RECV_SIGNAL` and `SEND_SIGNAL` information (see below)
 
 ## Features that don't work
-* TODO
+* `SIGSTOP` might not be logged on some occasions
 
 ## Relevant details
-* TODO
-
-## Code Style
-When contributing to the project, please follow these guidelines:
-- Use `camelCase` for **function and variable names**
-- Use `PascalCase` for **struct and enum names**
-- Use `ALL_CAPS_SNAKE_CASE` for **constant variable names and enum entries**
-- Don't forget include guards (`#ifndef ...`) in header files
-
-## Running the tests
-To run all the tests:
-```
-python3 tests/test.py
-```
-
-To run specific tests:
-```
-python3 tests/test.py 0 2 3 4 9 448
-```
+* The log file can become quite large when the program is run a lot of times
+* We used `fork` in conjunction with `exec` to recursively call `simpledu`, providing a modified `argv` (with changes to the path and, if defined, `--max-depth`)

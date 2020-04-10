@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include "parsing.h"
 #include "dir.h"
 #include "log.h"
@@ -18,6 +16,7 @@
 
 #define PIPE_READ 0
 #define PIPE_WRITE 1
+
 
 int main(int argc, char *argv[], char *envp[]) {
     createLog(CREATE_PROCESS, argv, argc);
@@ -60,7 +59,7 @@ int main(int argc, char *argv[], char *envp[]) {
 
     if ((dirPtr = opendir(args.path)) == NULL) {
         perror(args.path);
-        exit(1);
+        logAndExit(1);
     }
 
     int pipeFD[2];
@@ -95,7 +94,7 @@ int main(int argc, char *argv[], char *envp[]) {
         if (S_ISDIR(statBuf.st_mode)) {
             if (pipe(pipeFD) < 0) {
                 perror("pipe");
-                exit(1);
+                logAndExit(1);
             }
 
             char** childArgv = genChildArgv(argc, argv, dirPath);
@@ -114,12 +113,12 @@ int main(int argc, char *argv[], char *envp[]) {
                 // Make child standard output point to the pipe's write end
                 if (dup2(pipeFD[PIPE_WRITE], STDOUT_FILENO) < 0) {
                     perror("dup2");
-                    exit(1);
+                    logAndExit(1);
                 }
               
                 execv(argv[0], childArgv);
                 perror("execv");
-                exit(1);
+                logAndExit(1);
             }
             else { // Error occurred
                 perror("fork");
@@ -140,9 +139,10 @@ int main(int argc, char *argv[], char *envp[]) {
                 }
 
                 size_t subDirSize;
-                char subDirPath[256];  // Maybe change this later and somehow use memory allocation?
+                char* subDirPath = malloc(strlen(line) + 1);
 
                 sscanf(line, "%lu%s", &subDirSize, subDirPath);
+                logReadFromPipe(line);
 
                 if (!args.separateDirs && strcmp(dirPath, subDirPath) == 0) {
                     currentDirSize += subDirSize;
@@ -151,13 +151,25 @@ int main(int argc, char *argv[], char *envp[]) {
                 if (args.maxDepth > 0) {
                     if (strcmp(dirPath, subDirPath) == 0) {
                         printf("%lu\t%s\n", (size_t)(ceil((double)(subDirSize) / args.blockSize)), subDirPath);
+
+                        if (parent)
+                            logEntry((size_t)(ceil((double)(subDirSize) / args.blockSize)), subDirPath);
+                        else
+                            logWriteEntryToPipe((size_t)(ceil((double)(subDirSize) / args.blockSize)), subDirPath);
                     }
                     else {
                         printf("%s", line);
+
+                        if (parent) {
+                            logEntry(subDirSize, subDirPath);
+                        }
+                        else {
+                            logWriteToPipe(line);
+                        }
                     }
                 }
-                
 
+                free(subDirPath);
                 free(line);
             }
 
@@ -178,6 +190,11 @@ int main(int argc, char *argv[], char *envp[]) {
 
         if (args.all && args.maxDepth > 0) {
             printf("%lu\t%s\n", (size_t)(ceil((double)(fileSize) / args.blockSize)), dirPath);
+
+            if (parent)
+                logEntry((size_t)(ceil((double)(fileSize) / args.blockSize)), dirPath);
+            else
+                logWriteEntryToPipe((size_t)(ceil((double)(fileSize) / args.blockSize)), dirPath);
         }
 
         free(dirPath);
@@ -186,7 +203,11 @@ int main(int argc, char *argv[], char *envp[]) {
     size_t sizeToPrint = parent ? ceil((double)(currentDirSize) / args.blockSize) : currentDirSize;
     printf("%lu\t%s\n", sizeToPrint, args.path);
 
-    char *exit_info[1] = {"0"};
-    createLog(EXIT_PROCESS, exit_info, 1);
-    return 0;
+    if (parent)
+        logEntry(sizeToPrint, args.path);
+    else
+        logWriteEntryToPipe(sizeToPrint, args.path);
+    
+
+    logAndExit(0);
 }
