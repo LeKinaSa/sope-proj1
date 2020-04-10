@@ -1,7 +1,13 @@
 # Object files
 *.o
+*.d
 
 # Executables
+src/simpledu
 *.exe
 *.out
 *.app
+
+# Testing artifacts
+testeT_du.txt
+testeT_simpledu.txt
